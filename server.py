@@ -3,10 +3,10 @@ import socket
 import threading
 from message import save_message,get_last_20_messages,broadcast
 
-from db import create_table
+from db import ThreadedConnectionPool as pool
 
 server = socket.socket(socket.AF_INET , socket.SOCK_STREAM)
-server.bind(("localhost",9999))
+server.bind(("localhost",5000))
 server.listen()
 
 clients ={}
@@ -62,6 +62,7 @@ def handle_client(client_socket):
 while True:
     client_socket,address = server.accept()
     threading.Thread(target= handle_client, args= (client_socket,)).start()
+    print("function is running")
 
 
 

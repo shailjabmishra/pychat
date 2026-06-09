@@ -1,20 +1,24 @@
 import psycopg2
+from psycopg2.pool import ThreadedConnectionPool
 
-def get_connection(db_config:dict):
-    try:
-        connection = psycopg2.connect(
-            host =db_config['host'] ,
-            port = db_config['port'],
-            dbname = db_config['dbname'],
-            user = db_config['user'],
-            password = db_config['password']
-        )
-        return connection
-    except Exception as e:
-        print("Connection failed",e.__traceback__)
+try: 
+    pool = ThreadedConnectionPool(
+            minconn=1,
+            maxconn=10,
+            host="localhost",
+            port=5432,
+            dbname="pychatdb",
+            user="admin",
+            password="admin"
+            )
+    
+        
+
+except Exception as e:
+    print("Connection failed",e.__traceback__)
 
 def create_table(conn):
-    with conn.cursor as cur:
+    with conn.cursor() as cur:
         cur.execute(
             """
             CREATE TABLE IF NOT EXISTS messages (
@@ -23,7 +27,7 @@ def create_table(conn):
         content     TEXT         NOT NULL,
         sent_at     TIMESTAMPTZ  DEFAULT NOW(),
         is_direct   BOOLEAN      DEFAULT FALSE,
-        recipient   VARCHAR(64)  -- NULL for broadcast, username for DMs)
+        recipient   VARCHAR(64)  )
             """
         )
         cur.execute(
