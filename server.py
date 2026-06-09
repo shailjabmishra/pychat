@@ -1,41 +1,9 @@
 import psycopg2
 import socket
 import threading
+from message import save_message,get_last_20_messages,broadcast
 
-def get_connection(db_config:dict):
-    try:
-        connection = psycopg2.connect(
-            host =db_config['host'] ,
-            port = db_config['port'],
-            dbname = db_config['dbname'],
-            user = db_config['user'],
-            password = db_config['password']
-        )
-        return connection
-    except Exception as e:
-        print("Connection failed",e.__traceback__)
-
-def create_table(conn):
-    with conn.cursor as cur:
-        cur.execute(
-            """
-            CREATE TABLE IF NOT EXISTS messages (
-        id          SERIAL PRIMARY KEY,
-        sender      VARCHAR(64)  NOT NULL,
-        content     TEXT         NOT NULL,
-        sent_at     TIMESTAMPTZ  DEFAULT NOW(),
-        is_direct   BOOLEAN      DEFAULT FALSE,
-        recipient   VARCHAR(64)  -- NULL for broadcast, username for DMs)
-            """
-        )
-        cur.execute(
-            """
-        CREATE INDEX IF NOT EXISTS idx_messages_sent_at ON messages(sent_at DESC)
-            """
-        )
-        conn.commit()
-
-
+from db import create_table
 
 server = socket.socket(socket.AF_INET , socket.SOCK_STREAM)
 server.bind(("localhost",9999))
@@ -44,35 +12,6 @@ server.listen()
 clients ={}
 clients_lock = threading.Lock()
 
-def save_message(conn,username,message):
-    with conn.cursor as cur:
-        cur.execute(
-            """
-            insert into messages
-            (sender,content)
-            VALUES (%s,%s)
-            """,
-            (username,message)
-        )
-        conn.commit()
-
-def get_last_20_messages(conn):
-    with conn.cursor as cur:
-        cur.execute(
-            """
-            select sender as username, content as message from messages order by sent_at desc limit 20
-            """
-        )
-        rows = cur.fetchall()
-        return rows[::-1]
-
-def broadcast(sender,message):
-    with clients_lock:
-        for username,sock in clients.items():
-
-            if username == sender:
-                continue
-            sock.send(f"{sender}:{message}".encode())
 
 
 def handle_client(client_socket):
