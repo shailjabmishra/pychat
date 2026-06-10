@@ -3,7 +3,7 @@ import threading
 from datetime import datetime
 
 HOST= "localhost"
-PORT= 9999
+PORT= 2876
 
 running = True
 
@@ -56,9 +56,11 @@ def main():
     try:
         client_socket = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
         client_socket.connect((HOST,PORT))
+        print("connected")
 
         username = input("Enter name of the user:")
         client_socket.send(username.encode())
+        print("user")
 
         recieve_thread = threading.Thread(target= recieve_messages,args=(client_socket,))
         send_thread = threading.Thread(target=send_messages,args=(client_socket,username))
@@ -80,5 +82,6 @@ def main():
             pass
 
 
-
+if __name__ == "__main__":
+    main()
 

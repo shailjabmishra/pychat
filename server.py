@@ -3,16 +3,9 @@ import socket
 import threading
 from message import save_message,get_last_20_messages,broadcast
 
-from db import ThreadedConnectionPool as pool
+from db import pool
 
-server = socket.socket(socket.AF_INET , socket.SOCK_STREAM)
-server.bind(("localhost",5000))
-server.listen()
-
-clients ={}
-clients_lock = threading.Lock()
-
-
+from shared import clients ,clients_lock
 
 def handle_client(client_socket):
     username = None
@@ -49,6 +42,7 @@ def handle_client(client_socket):
         print(f"Error for {username}:{e}")
 
     finally:
+        print(f"entering finally block for {username}")
         with clients_lock:
             if username in clients:
                 del clients[username]
@@ -59,10 +53,27 @@ def handle_client(client_socket):
         client_socket.close()
         
 
-while True:
-    client_socket,address = server.accept()
-    threading.Thread(target= handle_client, args= (client_socket,)).start()
-    print("function is running")
+def server_conn():
+    while True:
+        client_socket,address = server.accept()
+        threading.Thread(target= handle_client, args= (client_socket,)).start()
+        print("function is running")
+
+
+try:
+    server = socket.socket(socket.AF_INET , socket.SOCK_STREAM)
+    server.bind(("localhost",2876))
+    server.listen()
+    server_conn()
+
+finally:
+    server.close()
+
+
+
+
+
+
 
 
 
